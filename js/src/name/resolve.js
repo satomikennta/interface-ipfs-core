@@ -41,7 +41,7 @@ module.exports = (createCommon, options) => {
     after((done) => common.teardown(done))
 
     it('should resolve a record with the default params after a publish', function (done) {
-      this.timeout(50 * 1000)
+      this.timeout(120 * 1000)
 
       const value = fixture.cid
 
@@ -52,7 +52,7 @@ module.exports = (createCommon, options) => {
         ipfs.name.resolve(nodeId, (err, res) => {
           expect(err).to.not.exist()
           expect(res).to.exist()
-          expect(res.path).to.equal(`/ipfs/${value}`)
+          expect(res.path || res).to.equal(`/ipfs/${value}`) // TODO
 
           done()
         })
@@ -60,14 +60,12 @@ module.exports = (createCommon, options) => {
     })
 
     it('should not get the entry if its validity time expired', function (done) {
-      this.timeout(50 * 1000)
+      this.timeout(140 * 1000)
 
       const value = fixture.cid
       const publishOptions = {
-        resolve: true,
-        lifetime: '1ms',
-        ttl: '10s',
-        key: 'self'
+        resolve: false,
+        lifetime: '10ms'
       }
 
       ipfs.name.publish(value, publishOptions, (err, res) => {
@@ -75,7 +73,9 @@ module.exports = (createCommon, options) => {
         expect(res).to.exist()
 
         // guarantee that the record has an expired validity.
+        console.log('will resolve')
         setTimeout(function () {
+          console.log('resolve now')
           ipfs.name.resolve(nodeId, (err, res) => {
             expect(err).to.exist()
             expect(err.message).to.equal('record has expired')
@@ -83,12 +83,12 @@ module.exports = (createCommon, options) => {
 
             done()
           })
-        }, 1)
+        }, 10)
       })
     })
 
     it('should recursively resolve to an IPFS hash', function (done) {
-      this.timeout(100 * 1000)
+      this.timeout(150 * 1000)
 
       const value = fixture.cid
       const publishOptions = {
@@ -125,7 +125,7 @@ module.exports = (createCommon, options) => {
             ipfs.name.resolve(keyId, resolveOptions, (err, res) => {
               expect(err).to.not.exist()
               expect(res).to.exist()
-              expect(res.path).to.equal(`/ipfs/${value}`)
+              expect(res.path || res).to.equal(`/ipfs/${value}`) // TODO
 
               done()
             })
